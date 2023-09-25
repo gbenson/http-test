@@ -1,0 +1,35 @@
+services:
+  httpd:
+    image: httpd
+    ports:
+      - 6001:80
+
+  nginx:
+    image: nginx
+    ports:
+      - 6002:80
+
+  tomcat:
+    image: tomcat
+    ports:
+      - 6003:8080
+
+  golang:
+    build:
+      dockerfile_inline: |
+        FROM golang
+        WORKDIR /usr/src/app
+        RUN \
+          go mod init XXX && \
+          go get golang.org/x/tools/cmd/godoc && \
+          go build golang.org/x/tools/cmd/godoc
+        CMD ["/usr/src/app/godoc", "-http=:6060"]
+    ports:
+      - 6004:6060
+
+  python:
+    image: python
+    ports:
+      - 6005:8000
+    command: python -m http.server
+    init: true
