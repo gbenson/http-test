@@ -6,6 +6,42 @@ from .util import ResponseInterceptor
 
 
 @pytest.mark.parametrize(
+    "method,expect_status",
+    (("PATCH", 405),
+     ("get", 501),
+     ("G'T", 501), # actually valid!
+     ))
+def test_unsupported_method(conn, method, expect_status):
+    req = (method + " / HTTP/1.1\r\nHost: localhost\r\n\r\n").encode()
+
+    conn.debuglevel = 10
+    conn.connect()
+    assert conn._HTTPConnection__state == _CS_IDLE
+
+    n = conn.sock.send(req)
+    assert n == len(req)
+
+    conn._HTTPConnection__state = _CS_REQ_SENT
+    r = conn.getresponse()
+
+    server_header = r.headers.get("Server", "")
+    is_nginx = "nginx" in server_header
+    is_python = "Python" in server_header
+
+    body = r.read()
+    is_tomcat = not server_header and b"Tomcat" in body
+
+    if is_nginx and expect_status == 501:
+        expect_status = 400
+    if is_tomcat:
+        expect_status = 404
+    if is_python and expect_status == 405:
+        expect_status = 501
+
+    assert r.status == expect_status
+
+
+@pytest.mark.parametrize(
     "req, expect_status",
     ((b"GET / HTTP/1.2\r\nHost: localhost\r\n\r\n", 200),
      (b"PRI * HTTP/2.0\r\n\r\n",  400),  # see golang Request.isH2Upgrade()
