@@ -16,16 +16,9 @@ services:
 
   golang:
     build:
-      dockerfile_inline: |
-        FROM golang
-        WORKDIR /usr/src/app
-        RUN \
-          go mod init XXX && \
-          go get golang.org/x/tools/cmd/godoc && \
-          go build golang.org/x/tools/cmd/godoc
-        CMD ["/usr/src/app/godoc", "-http=:6060"]
+      context: servers/go
     ports:
-      - 6004:6060
+      - 6004:80
 
   python:
     image: python
